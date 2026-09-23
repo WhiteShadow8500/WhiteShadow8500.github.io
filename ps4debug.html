@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en" manifest="cache.appcache">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Shadow's Services &middot; PS4Debug</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background: #0b0d10;
+        color: #c8ced8;
+        font: 15px/1.45 "Segoe UI", system-ui, sans-serif;
+      }
+      #brand {
+        text-align: center;
+        padding: 8px 10px;
+        background: #0e1116;
+        border-bottom: 1px solid #1e2732;
+      }
+      #brand img {
+        width: 28px;
+        height: 28px;
+        margin-right: 8px;
+        border-radius: 50%;
+        vertical-align: middle;
+      }
+      #brand b {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: #e6ebf2;
+        vertical-align: middle;
+      }
+      #note {
+        padding: 12px 14px;
+        background: #10221a;
+        color: #cfe9d8;
+        border-bottom: 1px solid #1e3a2a;
+        text-align: center;
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: 0.04em;
+      }
+      #note b { color: #7fd0a0; }
+
+      #wrap {
+        padding: 20px 18px 90px;
+        text-align: center;
+      }
+      #hdr {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #e6ebf2;
+        margin: 6px 0 8px;
+      }
+      #tag {
+        font-size: 13px;
+        color: #8b95a3;
+        margin: 0 0 22px;
+      }
+      #tag code {
+        color: #9fb3d0;
+        background: #11151b;
+        padding: 1px 6px;
+        border-radius: 4px;
+        border: 1px solid #1e2732;
+      }
+
+      #inject {
+        display: inline-block;
+        padding: 16px 26px;
+        font: 700 17px/1 "Segoe UI", system-ui, sans-serif;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: #0b0d10;
+        background: #7fd0a0;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+        outline: none;
+        box-shadow: 0 0 0 2px #0b0d10, 0 0 0 4px transparent;
+      }
+      #inject:focus, #inject:hover {
+        box-shadow: 0 0 0 2px #0b0d10, 0 0 0 4px #7fd0a0;
+      }
+      #inject:disabled {
+        background: #3a4652;
+        color: #8b95a3;
+        cursor: default;
+      }
+      #status {
+        margin-top: 22px;
+        font-size: 14px;
+        min-height: 20px;
+      }
+      #status.ok   { color: #7fd0a0; }
+      #status.bad  { color: #d08a7f; }
+      #status.warn { color: #d8c07f; }
+
+      #log {
+        margin: 18px auto 0;
+        max-width: 640px;
+        text-align: left;
+        white-space: pre-wrap;
+        font: 12px/1.45 Consolas, monospace;
+        background: #11151b;
+        border: 1px solid #1e2732;
+        border-radius: 5px;
+        padding: 10px 12px;
+        color: #9fb3d0;
+        display: none;
+      }
+      body.showlog #log { display: block; }
+
+      #row {
+        margin-top: 14px;
+        font-size: 12px;
+        color: #5c6672;
+      }
+      #row a {
+        color: #7fa0c6;
+        text-decoration: none;
+        margin: 0 8px;
+      }
+
+      #foot {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 6px;
+        text-align: center;
+        font-size: 12px;
+        color: #5c6672;
+        letter-spacing: 0.06em;
+        pointer-events: none;
+        line-height: 1.5;
+      }
+      #foot b { color: #8b95a3; font-weight: 600; }
+      #foot a {
+        color: #7fa0c6;
+        text-decoration: none;
+        pointer-events: auto;
+      }
+      #foot .hint {
+        color: #4c5560;
+        font-style: italic;
+        margin-left: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="brand">
+      <img src="logo_raw.png" alt="" width="28" height="28" /><b>Shadow's Services</b>
+    </div>
+    <div id="note">GoldHEN's binloader must be running &middot; port <b>9090</b></div>
+    <div id="wrap">
+      <div id="hdr">PS4Debug Injector</div>
+      <div id="tag">POSTs <code>ps4debug.bin</code> to <code>http://127.0.0.1:9090</code></div>
+      <button id="inject" type="button">Inject PS4Debug on port 9090</button>
+      <div id="status">idle</div>
+      <div id="log"></div>
+      <div id="row">
+        <a href="#" id="togglelog">show log</a>
+        <a href="jb.html">back to jailbreak</a>
+      </div>
+    </div>
+    <div id="foot">
+      discord <b>@whiteshadow8500</b> &middot;
+      <a href="https://discord.gg/pBwXGu37HR">discord.gg/pBwXGu37HR</a>
+      <span class="hint">(donations inside)</span>
+    </div>
+    <script>
+      (function () {
+        var params = new URLSearchParams(location.search);
+        var HOST = params.get("host") || "127.0.0.1";
+        var PORT = params.get("port") || "9090";
+        var URL_ = "http://" + HOST + ":" + PORT + "/";
+
+        var btn = document.getElementById("inject");
+        var st = document.getElementById("status");
+        var log = document.getElementById("log");
+        var togglelog = document.getElementById("togglelog");
+        var tag = document.getElementById("tag");
+        tag.innerHTML =
+          "POSTs <code>ps4debug.bin</code> to <code>" + URL_ + "</code>";
+
+        function set(msg, cls) {
+          st.textContent = msg;
+          st.className = cls || "";
+        }
+        function line(s) {
+          log.textContent += (log.textContent ? "\n" : "") + s;
+          log.scrollTop = log.scrollHeight;
+        }
+
+        togglelog.addEventListener("click", function (e) {
+          e.preventDefault();
+          document.body.classList.toggle("showlog");
+          togglelog.textContent = document.body.classList.contains("showlog")
+            ? "hide log"
+            : "show log";
+        });
+
+        btn.addEventListener("click", async function () {
+          btn.disabled = true;
+          set("fetching ps4debug.bin ...", "warn");
+          line("target = " + URL_);
+          var blob;
+          try {
+            var r = await fetch("ps4debug.bin", { cache: "reload" });
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            blob = new Uint8Array(await r.arrayBuffer());
+            line("ps4debug.bin: " + blob.length + " bytes");
+            if (blob.length === 0) throw new Error("empty payload");
+            if (blob[0] !== 0xe9) {
+              line("WARN head=0x" + blob[0].toString(16) + " (expected 0xe9)");
+            }
+          } catch (e) {
+            set("payload load failed: " + (e && e.message || e), "bad");
+            line("FETCH ERR: " + (e && e.message || e));
+            btn.disabled = false;
+            return;
+          }
+
+          set("injecting on " + HOST + ":" + PORT + " ...", "warn");
+          try {
+            var res = await fetch(URL_, {
+              method: "POST",
+              mode: "no-cors",
+              body: blob,
+              headers: { "Content-Type": "application/octet-stream" },
+            });
+            line(
+              "POST returned: type=" + res.type +
+              " status=" + (res.status || "(opaque)"),
+            );
+            set(
+              "sent " + blob.length + " bytes to " + HOST + ":" + PORT +
+              " -- check the console for PS4Debug",
+              "ok",
+            );
+          } catch (e) {
+            var msg = (e && e.message) || String(e);
+            line("POST ERR: " + msg);
+            if (/Failed to fetch|NetworkError|refused|reset/i.test(msg)) {
+              set(
+                "connection to " + HOST + ":" + PORT + " refused -- is" +
+                " GoldHEN's binloader running?",
+                "bad",
+              );
+            } else {
+              set("inject failed: " + msg, "bad");
+            }
+          }
+          btn.disabled = false;
+        });
+      })();
+    </script>
+  </body>
+</html>
